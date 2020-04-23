@@ -12,8 +12,6 @@
 #include <systemlib/param/param.h>
 #endif
 
-const int SCENARIO = 2;
-
 void QuadControl::Init()
 {
   BaseController::Init();
@@ -72,52 +70,39 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
   
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
     
-    if (SCENARIO == 1) {
-        cmd.desiredThrustsN[0] = CONST_GRAVITY * mass / 4.f;
-        cmd.desiredThrustsN[1] = CONST_GRAVITY * mass / 4.f;
-        cmd.desiredThrustsN[2] = CONST_GRAVITY * mass / 4.f;
-        cmd.desiredThrustsN[3] = CONST_GRAVITY * mass / 4.f;
+    // Scenario 2
+    
+    // [ 1  1  1  1] // c
+    // [ 1 -1  1 -1] // roll
+    // [ 1  1 -1 -1] // pitch
+    // [-1  1  1 -1] // yaw
 
-//        cmd.desiredThrustsN[0] = 0;
-//        cmd.desiredThrustsN[1] = 4.f;
-//        cmd.desiredThrustsN[2] = 4.f;
-//        cmd.desiredThrustsN[3] = 0;
-    }
-    else {
-        // Scenario 2
-        
-        // [ 1  1  1  1] // c
-        // [ 1 -1  1 -1] // roll
-        // [ 1  1 -1 -1] // pitch
-        // [-1  1  1 -1] // yaw
-
-        
-        // [ 1  1  1  1][thrust_1]   [c_bar]
-        // [ 1 -1  1 -1][thrust_2] = [p_bar=Mx/l]
-        // [ 1  1 -1 -1][thrust_3]   [q_bar=My/l]
-        // [-1  1  1 -1][thrust_4]   [r_bar=-Mz/kappa]
-        
-        float l = L * M_SQRT1_2;
-        
-        float c_bar = collThrustCmd;
-        float p_bar = momentCmd.x / l;
-        float q_bar = momentCmd.y / l;
-        float r_bar = -momentCmd.z / kappa; // thrust up, momentCmd is down
-        
-        // now solve the equation for thrust by multiplying the inverse of the 4x4 matrix
-        
-        // [thrust_1]   [c_bar]           [ 1/4  1/4  1/4  1/4]
-        // [thrust_2] = [p_bar=Mx/l]   x  [ 1/4 -1/4  1/4 -1/4]
-        // [thrust_3]   [q_bar=My/l]      [ 1/4  1/4 -1/4 -1/4]
-        // [thrust_4]   [r_bar=Mz/kappa]  [ 1/4 -1/4 -1/4 -1/4]
-        
-        // apparently the system accepts thrust as sqrt(F/k_f) according to F = k_f * omega^2, so no need to calc actual F per rotor
-        cmd.desiredThrustsN[0] = (c_bar + p_bar + q_bar + r_bar) / 4.f;
-        cmd.desiredThrustsN[1] = (c_bar - p_bar + q_bar - r_bar) / 4.f;
-        cmd.desiredThrustsN[2] = (c_bar + p_bar - q_bar - r_bar) / 4.f;
-        cmd.desiredThrustsN[3] = (c_bar - p_bar - q_bar - r_bar) / 4.f;
-        
-    }
+    
+    // [ 1  1  1  1][thrust_1]   [c_bar]
+    // [ 1 -1  1 -1][thrust_2] = [p_bar=Mx/l]
+    // [ 1  1 -1 -1][thrust_3]   [q_bar=My/l]
+    // [-1  1  1 -1][thrust_4]   [r_bar=-Mz/kappa]
+    
+    float l = L * M_SQRT1_2;
+    
+    float c_bar = collThrustCmd;
+    float p_bar = momentCmd.x / l;
+    float q_bar = momentCmd.y / l;
+    float r_bar = -momentCmd.z / kappa; // thrust up, momentCmd is down
+    
+    // now solve the equation for thrust by multiplying the inverse of the 4x4 matrix
+    
+    // [thrust_1]   [c_bar]           [ 1/4  1/4  1/4  1/4]
+    // [thrust_2] = [p_bar=Mx/l]   x  [ 1/4 -1/4  1/4 -1/4]
+    // [thrust_3]   [q_bar=My/l]      [ 1/4  1/4 -1/4 -1/4]
+    // [thrust_4]   [r_bar=Mz/kappa]  [ 1/4 -1/4 -1/4 -1/4]
+    
+    // apparently the system accepts thrust as sqrt(F/k_f) according to F = k_f * omega^2, so no need to calc actual F per rotor
+    cmd.desiredThrustsN[0] = (c_bar + p_bar + q_bar + r_bar) / 4.f;
+    cmd.desiredThrustsN[1] = (c_bar - p_bar + q_bar - r_bar) / 4.f;
+    cmd.desiredThrustsN[2] = (c_bar + p_bar - q_bar - r_bar) / 4.f;
+    cmd.desiredThrustsN[3] = (c_bar - p_bar - q_bar - r_bar) / 4.f;
+    
     /////////////////////////////// END STUDENT CODE ////////////////////////////
     
   return cmd;
@@ -145,7 +130,6 @@ V3F QuadControl::BodyRateControl(V3F pqrCmd, V3F pqr)
     
     momentCmd = kpPQR * pqrError * inertia;
 
-    
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return momentCmd;
@@ -199,7 +183,7 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
     pqrCmd.x = (R(1, 0) * bXCDot - R(0, 0) * bYCDot) / R(2, 2);
     pqrCmd.y = (R(1, 1) * bXCDot - R(0, 1) * bYCDot) / R(2, 2);
     pqrCmd.z = 0.f;
-
+    
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return pqrCmd;
@@ -233,15 +217,13 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
     
     float posError = posZCmd - posZ;
     integratedAltitudeError += posError * dt;
-    float velZError =  velZCmd - velZ;
+    float velZError =  CONSTRAIN(velZCmd - velZ, -maxAscentRate, maxDescentRate);
 
     float pTerm = kpPosZ * posError;
-    float dTerm = CONSTRAIN(kpVelZ * velZError, -maxAscentRate, maxDescentRate);
+    float dTerm = kpVelZ * velZError;
     float iTerm = KiPosZ * integratedAltitudeError;
     accelZCmd += pTerm + iTerm + dTerm;
 
-    
-    
     // formula for vertical accel command is:
     // accelZCmd = c * bZ + g
     // c = (accelZCmd - g) / bZ
@@ -290,17 +272,12 @@ V3F QuadControl::LateralPositionControl(V3F posCmd, V3F velCmd, V3F pos, V3F vel
     // We're using a standard PD controller with feedforward (accelCmd).
     // kd and kp are kpPosXY and kpVelXY
     
-//    accelCmd.x += kpPosXY * (posCmd.x - pos.x) + kpVelXY * (CONSTRAIN(velCmd.x, -maxSpeedXY, maxSpeedXY) - vel.x);
-//    accelCmd.y += kpPosXY * (posCmd.y - pos.y) + kpVelXY * (CONSTRAIN(velCmd.y, -maxSpeedXY, maxSpeedXY) - vel.y);
-//
-//    accelCmd.x = CONSTRAIN(accelCmd.x, -maxAccelXY, maxAccelXY);
-//    accelCmd.y = CONSTRAIN(accelCmd.y, -maxAccelXY, maxAccelXY);
     velCmd.constrain(-maxSpeedXY,maxSpeedXY);
     accelCmd = kpPosXY * (posCmd - pos) + kpVelXY *(velCmd - vel);
     accelCmd.constrain(-maxAccelXY,maxAccelXY);
     
   /////////////////////////////// END STUDENT CODE ////////////////////////////
-
+    
   return accelCmd;
 }
 
@@ -319,8 +296,8 @@ float QuadControl::YawControl(float yawCmd, float yaw)
 
   float yawRateCmd=0;
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-
-
+    
+   yawRateCmd = kpYaw * (fmod(yawCmd - yaw,2*M_PI));
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return yawRateCmd;
@@ -341,8 +318,8 @@ VehicleCommand QuadControl::RunControl(float dt, float simTime)
   
   V3F desOmega = RollPitchControl(desAcc, estAtt, collThrustCmd);
   desOmega.z = YawControl(curTrajPoint.attitude.Yaw(), estAtt.Yaw());
-
+  
   V3F desMoment = BodyRateControl(desOmega, estOmega);
-
+  
   return GenerateMotorCommands(collThrustCmd, desMoment);
 }
