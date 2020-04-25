@@ -32,6 +32,7 @@ Commands.5=Toggle.ActualTrajectory
 Commands.6=AddGraph1.WindowThreshold(Quad1.PosFollowErr,0.1,1.5)
 Commands.7=AddGraph1.WindowThreshold(Quad2.PosFollowErr,0.1,1.5)
 Commands.8=AddGraph1.WindowThreshold(Quad3.PosFollowErr,0.1,1.5)
+Commands.9=Toggle.Thrusts
 
 INCLUDE QuadControlParams.txt
 INCLUDE Simulation.txt
